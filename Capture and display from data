@@ -1,0 +1,19 @@
+<?php
+// Check if form data was submitted
+if ($_SERVER["REQUEST_METHOD"] == "POST" || $_SERVER["REQUEST_METHOD"] == "PUT" || $_SERVER["REQUEST_METHOD"] == "DELETE") {
+
+  // Get form data
+  $data = file_get_contents("php://input");
+
+  // Display data in table format
+  echo "<table>";
+  foreach ($_SERVER as $key => $value) {
+    echo "<tr><td>" . htmlspecialchars($key) . "</td><td>" . htmlspecialchars($value) . "</td></tr>";
+  }
+  echo "</table>";
+
+  // Store data as JSON object for Javascript
+  $json_data = json_encode($data);
+  echo "<script>var formData = " . $json_data . ";</script>";
+}
+?>
