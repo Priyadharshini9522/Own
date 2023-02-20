@@ -1,0 +1,82 @@
+<?php
+/*
+Plugin Name: CF7 OpenAI
+Description: Extends the ability of Contact Form 7 form submission with OpenAI API.
+Version: 1.0.0
+Author: Your Name
+*/
+
+// Add custom admin page to accept OpenAI API key
+function cf7_openai_settings_page() {
+  add_options_page(
+    'CF7 OpenAI Settings', // page title
+    'CF7 OpenAI', // menu title
+    'manage_options', // capability
+    'cf7-openai-settings', // menu slug
+    'cf7_openai_settings_page_content' // function to display content
+  );
+}
+add_action('admin_menu', 'cf7_openai_settings_page');
+
+// Function to display content of the admin page
+function cf7_openai_settings_page_content() {
+  ?>
+  <div class="wrap">
+    <h1>CF7 OpenAI Settings</h1>
+    <form method="post" action="options.php">
+      <?php
+      settings_fields('cf7_openai_settings');
+      do_settings_sections('cf7_openai_settings');
+      ?>
+      <table class="form-table">
+        <tr>
+          <th scope="row"><label for="cf7_openai_api_key">OpenAI API Key</label></th>
+          <td><input type="text" id="cf7_openai_api_key" name="cf7_openai_api_key" value="<?php echo esc_attr(get_option('cf7_openai_api_key')); ?>"></td>
+        </tr>
+      </table>
+      <?php submit_button(); ?>
+    </form>
+  </div>
+  <?php
+}
+
+// Register settings for the OpenAI API key
+function cf7_openai_register_settings() {
+  register_setting('cf7_openai_settings', 'cf7_openai_api_key');
+}
+add_action('admin_init', 'cf7_openai_register_settings');
+
+// Add OpenAI response to form success message
+function cf7_openai_form_response($message, $status, $form) {
+  // Get the OpenAI API key from the settings
+  $api_key = get_option('cf7_openai_api_key');
+
+  // Only process form if OpenAI API key is set
+  if (!empty($api_key)) {
+    // Get the form submission data
+    $data = array();
+    foreach ($form->posted_data as $key => $value) {
+      $data[$key] = is_array($value) ? implode(', ', $value) : $value;
+    }
+
+    // Send the form data to OpenAI API
+    $response = wp_remote_post('https://api.openai.com/v1/...', array(
+      'headers' => array(
+        'Content-Type' => 'application/json',
+        'Authorization' => 'Bearer ' . $api_key
+      ),
+      'body' => json_encode($data)
+    ));
+
+    // Parse the response from OpenAI API
+    $result = json_decode(wp_remote_retrieve_body($response));
+
+    // Append OpenAI response to form success message
+    if ($result) {
+      $message .= '<br><br>' . $result->message;
+    }
+  }
+
+  return $message;
+}
+add_filter('wpcf7_mail_sent', 'cf7_openai_form_response', 
